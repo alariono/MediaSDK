@@ -857,6 +857,7 @@ enum {
     MFX_EXTBUFF_VPP_DEINTERLACING               = MFX_MAKEFOURCC('V','P','D','I'),
     MFX_EXTBUFF_AVC_REFLISTS                    = MFX_MAKEFOURCC('R','L','T','S'),
     MFX_EXTBUFF_DEC_VIDEO_PROCESSING            = MFX_MAKEFOURCC('D','E','C','V'),
+    MFX_EXTBUFF_DEC_VIDEO_PROCESSING_EXTA_DATA  = MFX_MAKEFOURCC('D','V','P','E'),
     MFX_EXTBUFF_VPP_FIELD_PROCESSING            = MFX_MAKEFOURCC('F','P','R','O'),
     MFX_EXTBUFF_CODING_OPTION3                  = MFX_MAKEFOURCC('C','D','O','3'),
     MFX_EXTBUFF_CHROMA_LOC_INFO                 = MFX_MAKEFOURCC('C','L','I','N'),
@@ -1538,6 +1539,13 @@ typedef struct {
 
     mfxU16  reserved[13];
 } mfxExtDecVideoProcessing;
+
+typedef struct {
+    mfxExtBuffer    Header;
+
+    mfxMemId    MemId;
+    mfxU16  reserved[13];
+} mfxExtDecVideoProcessingExtaData;
 
 typedef struct {
     mfxExtBuffer Header;

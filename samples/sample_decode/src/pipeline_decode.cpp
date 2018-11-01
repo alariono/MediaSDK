@@ -134,6 +134,7 @@ CDecodingPipeline::CDecodingPipeline()
     m_hwdev = NULL;
 
     m_bOutI420 = false;
+    m_bDumpFullSizedSurface = false;
 
 #ifdef LIBVA_SUPPORT
     m_export_mode = vaapiAllocatorParams::DONOT_EXPORT;
@@ -410,6 +411,18 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
         // prepare YUV file writer
         sts = m_FileWriter.Init(pParams->strDstFile, pParams->numViews);
         MSDK_CHECK_STATUS(sts, "m_FileWriter.Init failed");
+        if ((pParams->bDumpFullSizedSurface) && (pParams->nDecoderPostProcessing))
+        {
+            sts = m_FileWriterForFullSizedSurfaces.Init(pParams->strDstFileFullSizedSurfaces, pParams->numViews);
+            MSDK_CHECK_STATUS(sts, "m_FileWriterForFullSizedSurfaces.Init failed");
+            m_bDumpFullSizedSurface = true;
+            for (mfxU32 i = 0; i < 16; i++)
+            {
+                m_DecoderFullSizedSurfaces[i].Header.BufferId = MFX_EXTBUFF_DEC_VIDEO_PROCESSING_EXTA_DATA;
+                m_DecoderFullSizedSurfaces[i].Header.BufferSz = sizeof(mfxExtDecVideoProcessingExtaData);
+            }
+
+        }
     } else if ((m_eWorkMode != MODE_PERFORMANCE) && (m_eWorkMode != MODE_RENDERING)) {
         msdk_printf(MSDK_STRING("error: unsupported work mode\n"));
         return MFX_ERR_UNSUPPORTED;
@@ -518,6 +531,7 @@ void CDecodingPipeline::Close()
     m_pPlugin.reset();
     m_mfxSession.Close();
     m_FileWriter.Close();
+    m_FileWriterForFullSizedSurfaces.Close();
     if (m_FileReader.get())
         m_FileReader->Close();
 
@@ -794,7 +808,10 @@ mfxStatus CDecodingPipeline::InitMfxParams(sInputParams *pParams)
                }
             }
             if ((m_bVppIsUsed) && (MODE_DECODER_POSTPROC_AUTO == pParams->nDecoderPostProcessing))
+            {
                 msdk_printf(MSDK_STRING("Decoder post-processing is unsupported for this stream, VPP is used for resizing\n") );
+                m_bDumpFullSizedSurface = false;
+            }
         }
     }
 #endif //MFX_VERSION >= 1022
@@ -1126,6 +1143,13 @@ mfxStatus CDecodingPipeline::AllocFrames()
                 m_pSurfaces[i].frame.Data.ExtParam = &m_VppSurfaceExtParams[0];
                 m_pSurfaces[i].frame.Data.NumExtParam = (mfxU16)m_VppSurfaceExtParams.size();
             }
+
+            if (m_bDumpFullSizedSurface)
+            {
+                m_ExtBuffersDecoderFullSizedSurfaces[i].push_back((mfxExtBuffer*)(&m_DecoderFullSizedSurfaces[i]));
+                m_pSurfaces[i].frame.Data.ExtParam = &m_ExtBuffersDecoderFullSizedSurfaces[i][0];
+                m_pSurfaces[i].frame.Data.NumExtParam++;
+            }
         }
         else {
             sts = m_pGeneralAllocator->Lock(m_pGeneralAllocator->pthis, m_mfxResponse.mids[i], &(m_pSurfaces[i].frame.Data));
@@ -1312,6 +1336,7 @@ void CDecodingPipeline::DeleteAllocator()
 void CDecodingPipeline::SetMultiView()
 {
     m_FileWriter.SetMultiView();
+    m_FileWriterForFullSizedSurfaces.SetMultiView();
     m_bIsMVC = true;
 }
 
@@ -1458,6 +1483,8 @@ mfxStatus CDecodingPipeline::DeliverOutput(mfxFrameSurface1* frame)
     {
         sts = m_FileWriter.Reset();
         MSDK_CHECK_STATUS(sts, "");
+        sts = m_FileWriterForFullSizedSurfaces.Reset();
+        MSDK_CHECK_STATUS(sts, "");
         m_bResetFileWriter = false;
     }
 
@@ -1471,6 +1498,27 @@ mfxStatus CDecodingPipeline::DeliverOutput(mfxFrameSurface1* frame)
             }
             if ((MFX_ERR_NONE == res) && (MFX_ERR_NONE != sts)) {
                 res = sts;
+            }
+            mfxExtDecVideoProcessingExtaData * extData = (mfxExtDecVideoProcessingExtaData *)GetExtBuffer(frame->Data.ExtParam, frame->Data.NumExtParam, MFX_EXTBUFF_DEC_VIDEO_PROCESSING_EXTA_DATA);
+            if (m_bDumpFullSizedSurface && (nullptr != extData))
+            {
+                mfxFrameSurface1 localFrame;
+                localFrame.Info.FourCC = MFX_FOURCC_NV12;
+                localFrame.Info.CropX = 0;
+                localFrame.Info.CropY = 0;
+                localFrame.Info.CropH = m_mfxVideoParams.mfx.FrameInfo.CropH;
+                localFrame.Info.CropW = m_mfxVideoParams.mfx.FrameInfo.CropW;
+                localFrame.Info.Height = m_mfxVideoParams.mfx.FrameInfo.Height;
+                localFrame.Info.Width = m_mfxVideoParams.mfx.FrameInfo.Width;
+                res = m_pGeneralAllocator->Lock(m_pGeneralAllocator->pthis, extData->MemId, &(localFrame.Data));
+                if (MFX_ERR_NONE == res)
+                {
+                    res = m_bOutI420 ? m_FileWriterForFullSizedSurfaces.WriteNextFrameI420(&localFrame)
+                                    : m_FileWriterForFullSizedSurfaces.WriteNextFrame(&localFrame);
+                    sts = m_pGeneralAllocator->Unlock(m_pGeneralAllocator->pthis, extData->MemId, &(localFrame.Data));
+                }
+                if ((MFX_ERR_NONE == res) && (MFX_ERR_NONE != sts))
+                    res = sts;
             }
         } else if (m_eWorkMode == MODE_RENDERING) {
 #if D3D_SURFACES_SUPPORT

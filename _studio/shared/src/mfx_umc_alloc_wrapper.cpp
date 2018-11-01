@@ -484,6 +484,13 @@ UMC::Status mfx_UMC_FrameAllocator::Alloc(UMC::FrameMemID *pNewMemID, const UMC:
                 return UMC::UMC_ERR_FAILED;
 
             m_extSurfaces[m_curIndex].isUsed = true;
+            mfxExtDecVideoProcessingExtaData* extbuf = (mfxExtDecVideoProcessingExtaData *)GetExtendedBuffer(m_extSurfaces[index].FrameSurface->Data.ExtParam,
+                                                    m_extSurfaces[index].FrameSurface->Data.NumExtParam,
+                                                    MFX_EXTBUFF_DEC_VIDEO_PROCESSING_EXTA_DATA);
+            if (m_sfcVideoPostProcessing && extbuf)
+            {
+                extbuf->MemId = m_pCore->MapIdx(m_frameDataInternal.GetSurface(index).Data.MemId);
+            }
         }
     }
 

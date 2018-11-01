@@ -113,8 +113,11 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                         or fail if the decoded stream is unsupported\n"));
     msdk_printf(MSDK_STRING("                  auto: instruct to use decoder-based post processing for supported streams \n"));
     msdk_printf(MSDK_STRING("                        or perform VPP operation through separate pipeline component for unsupported streams\n"));
-
 #endif //MFX_VERSION >= 1022
+#if MFX_VERSION >= 1028 /* !!! correct API version */
+    msdk_printf(MSDK_STRING("   [-o::fullsized OutputFullSizedYUVFile] - store full sized YUV surfaces too\n"));
+    msdk_printf(MSDK_STRING("                                    Valid with -dec_postproc force option only!\n"));
+#endif
     msdk_printf(MSDK_STRING("   [-threads_num]            - number of mediasdk task threads\n"));
     msdk_printf(MSDK_STRING("   [-threads_schedtype]      - scheduling type of mediasdk task threads\n"));
     msdk_printf(MSDK_STRING("   [-threads_priority]       - priority of mediasdk task threads\n"));
@@ -566,6 +569,16 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-i:null")))
         {
             ;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-o::fullsized")))
+        {
+            if (++i < nArgNum) {
+                pParams->bDumpFullSizedSurface = true;
+                msdk_opt_read(strInput[i], pParams->strDstFileFullSizedSurfaces);
+            }
+            else {
+                msdk_printf(MSDK_STRING("error: option '-o::fullsized' expects an argument\n"));
+            }
         }
         else // 1-character options
         {

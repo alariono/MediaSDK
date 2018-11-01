@@ -116,6 +116,7 @@ struct sInputParams
 #if (MFX_VERSION >= 1025)
     bool    bErrorReport;
 #endif
+    bool    bDumpFullSizedSurface;
 
     mfxI32  monitorType;
 #if defined(LIBVA_SUPPORT)
@@ -124,6 +125,7 @@ struct sInputParams
 
     msdk_char     strSrcFile[MSDK_MAX_FILENAME_LEN];
     msdk_char     strDstFile[MSDK_MAX_FILENAME_LEN];
+    msdk_char     strDstFileFullSizedSurfaces[MSDK_MAX_FILENAME_LEN];
     sPluginParams pluginParams;
 
     sInputParams()
@@ -246,6 +248,7 @@ protected: // functions
 
 protected: // variables
     CSmplYUVWriter          m_FileWriter;
+    CSmplYUVWriter          m_FileWriterForFullSizedSurfaces;
     std::unique_ptr<CSmplBitstreamReader>  m_FileReader;
     mfxBitstream            m_mfxBS; // contains encoded data
     mfxU64 totalBytesProcessed;
@@ -267,6 +270,9 @@ protected: // variables
 #if (MFX_VERSION >= 1025)
     mfxExtDecodeErrorReport m_DecodeErrorReport;
 #endif
+
+    mfxExtDecVideoProcessingExtaData m_DecoderFullSizedSurfaces[16];
+    std::vector<mfxExtBuffer *> m_ExtBuffersDecoderFullSizedSurfaces[16];
 
     GeneralAllocator*       m_pGeneralAllocator;
     mfxAllocatorParams*     m_pmfxAllocatorParams;
@@ -294,6 +300,7 @@ protected: // variables
     mfxU32                  m_fourcc; // color format of vpp out, i420 by default
     bool                    m_bPrintLatency;
     bool                    m_bOutI420;
+    bool                    m_bDumpFullSizedSurface;
 
     mfxU16                  m_vppOutWidth;
     mfxU16                  m_vppOutHeight;

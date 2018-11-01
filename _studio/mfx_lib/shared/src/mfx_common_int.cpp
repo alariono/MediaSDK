@@ -510,6 +510,7 @@ mfxStatus CheckDecodersExtendedBuffers(mfxVideoParam const* par)
                                                                MFX_EXTBUFF_MVC_SEQ_DESC,
                                                                MFX_EXTBUFF_MVC_TARGET_VIEWS,
                                                                MFX_EXTBUFF_DEC_VIDEO_PROCESSING,
+                                                               MFX_EXTBUFF_DEC_VIDEO_PROCESSING_EXTA_DATA,
                                                                MFX_EXTBUFF_FEI_PARAM};
 
     static const mfxU32 g_decoderSupportedExtBuffersHEVC[]  = {
