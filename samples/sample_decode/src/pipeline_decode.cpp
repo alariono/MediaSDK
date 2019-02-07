@@ -453,6 +453,13 @@ mfxStatus CDecodingPipeline::Init(sInputParams *pParams)
     sts = m_pmfxDEC->GetVideoParam(&m_mfxVideoParams);
     MSDK_CHECK_STATUS(sts, "m_pmfxDEC->GetVideoParam failed");
 
+    if ( 0 != pParams->nSkipModeValue)
+    {
+        sts = m_pmfxDEC->SetSkipMode((mfxSkipMode)pParams->nSkipModeValue);
+        MSDK_CHECK_STATUS(sts, "m_pmfxDEC->SetSkipMode failed");
+    }
+
+
     if (m_eWorkMode == MODE_RENDERING)
     {
         sts = CreateRenderingWindow(pParams);

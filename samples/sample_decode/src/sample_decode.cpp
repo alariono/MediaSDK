@@ -125,6 +125,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("Example:\n"));
     msdk_printf(MSDK_STRING("  %s h265 -i in.bit -o out.yuv -p 15dd936825ad475ea34e35f3f54217a6\n"), strAppName);
+    msdk_printf(MSDK_STRING("   -set_skip_mode <val> to pass skip mode to decoder \n"));
 }
 
 mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* pParams)
@@ -475,6 +476,19 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             }
         }
 #endif //MFX_VERSION >= 1022
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-set_skip_mode")))
+        {
+            if(i + 1 >= nArgNum)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Not enough parameters for -f key"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], pParams->nSkipModeValue))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("rnSkipModeValue is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-f")))
         {
             if(i + 1 >= nArgNum)

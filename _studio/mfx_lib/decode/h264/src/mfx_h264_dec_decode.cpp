@@ -1750,12 +1750,15 @@ mfxStatus VideoDECODEH264::SetSkipMode(mfxSkipMode mode)
         case MFX_SKIPMODE_LESS:
             num = -1;
             break;
+
+        case MFX_SKIPMODE_NOBIFRAME:
+            num = 42;
+            break;
+
         default:
             {
                 return MFX_ERR_UNSUPPORTED;
-
             }
-
     }
 
     m_pH264VideoDecoder->ChangeVideoDecodingSpeed(num);

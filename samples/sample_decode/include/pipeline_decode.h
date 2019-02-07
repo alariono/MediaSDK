@@ -99,6 +99,7 @@ struct sInputParams
     mfxU16  nThreadsNum;
     mfxI32  SchedulingType;
     mfxI32  Priority;
+    mfxU16  nSkipModeValue;
 
     mfxU16  Width;
     mfxU16  Height;

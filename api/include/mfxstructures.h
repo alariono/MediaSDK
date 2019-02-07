@@ -1122,7 +1122,8 @@ typedef enum {
 typedef enum {
     MFX_SKIPMODE_NOSKIP=0,
     MFX_SKIPMODE_MORE=1,
-    MFX_SKIPMODE_LESS=2
+    MFX_SKIPMODE_LESS=2,
+    MFX_SKIPMODE_NOBIFRAME = 3,
 } mfxSkipMode;
 
 typedef struct {
